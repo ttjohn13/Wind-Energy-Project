@@ -9,3 +9,9 @@ def Space_Field(Column_Vector, LengthWidth, number_of_points):
     space = np.tile(Column_Vector, (number_of_points, number_of_points, 1, 1))
     return x, y, space
 
+
+def kick(vector_field, max_kick):
+    individual_change_percent = (2 * np.random.rand(*vector_field.shape)-1) * max_kick
+    individual_change = np.multiply(vector_field, individual_change_percent)
+    return vector_field + individual_change
+
