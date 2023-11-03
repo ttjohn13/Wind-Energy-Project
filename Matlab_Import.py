@@ -1,33 +1,44 @@
 import numpy as np
 import scipy.io as sio
-from os.path import dirname, join as pjoin
-#data_dir = pjoindirname(MAE579)
-#mat_fname = pjoin(data_dir, 'Data_for_VAD.mat')
-mat_contents = sio.loadmat('Data_for_VAD.mat')
-Data = mat_contents['Data']
-Datestring = Data[:, :]['name']
+
+mat_contents = sio.loadmat('Data_for_VAD.mat')  # import matlab file
+Data = mat_contents['Data']  # pull the data structure
+Datestring = Data[:, :]['name']  # pull the name profile that defines date and time
 
 import datetime
-def conver_to_datetime(date_string):
+
+
+def convert_to_datetime(date_string):  # Function to convert the string of date times to a date time format
     return datetime.datetime.strptime(date_string, "%Y%m%d_%H%M%S")
 
 
+# conduct conversion function in an inline for loop
+Dates = np.array([convert_to_datetime(Datestring[0, i][0]) for i in range(len(Data['name'][0]))])
+number_of_arrays = np.shape(Data['range'][0, :])[0]  # count the number of scans
 
 
-Dates = np.array([conver_to_datetime(Datestring[0, i][0]) for i in range(len(Data['name'][0]))])
-number_of_arrays = np.shape(Data['range'][0, :])[0]
-length_array, width_array = np.shape(Data['range'][0, 0])
-# allocate memory for each set of arrays
-range_array = np.zeros((number_of_arrays, length_array, width_array))
-az_array = np.zeros_like(range_array)
-el_array = np.zeros_like(range_array)
-rv_array = np.zeros_like(range_array)
+# Class will allow for my own defined organization of the matlab matrix
+class LidarData:
+    def __init__(self, ranges, az, el, rv, date):
+        self.range = ranges
+        self.azimuth = az
+        self.elevation = el
+        self.rad_vector = rv
+        self.date = date
 
+
+Formatted_data = []  # create an empty list to store the new class objects with data
+
+# Fill list with the object files
 for i in range(number_of_arrays):
-    range_array[i, :, :] = Data['range'][0, i][:, :]
-    az_array[i, :, :] = Data['az'][0, i][:, :]
-    el_array[i, :, :] = Data['el'][0, i][:, :]
-    rv_array[i, :, :] = Data['rv'][0, i][:, :]
+    range_array = Data['range'][0, i][:, :]
+    az_array = Data['az'][0, i][:, :]
+    el_array = Data['el'][0, i][:, :]
+    rv_array = Data['rv'][0, i][:, :]
+    Formatted_data.append(LidarData(range_array, az_array, el_array, rv_array, Dates[i]))
 
 
+import pickle
 
+with open('Formatted_Data.pickle', 'wb') as f:
+    pickle.dump(Formatted_data, f)
