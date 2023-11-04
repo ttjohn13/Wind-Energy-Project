@@ -13,27 +13,26 @@ def rad2CartOffset(az, r, elv):
     z_offset = np.multiply(np.sin(np.deg2rad(elv)), r)
     x_offset = np.multiply(np.multiply(np.cos(np.deg2rad(elv)), np.cos(np.deg2rad(az))), r)
     y_offset = np.multiply(np.multiply(np.cos(np.deg2rad(elv)), np.sin(np.deg2rad(az))), r)
+    z_offset = np.resize(z_offset, (len(x_offset), 1))
     cartesian_offset = np.hstack((x_offset, y_offset, z_offset))
     return cartesian_offset
 
 
-def slice_points(data, x, y, z, az, elev, lidar_loc=np.NAN):
+def slice_points(data, x, y, z, az, elev, zplane, lidar_loc=np.NAN):
     udata = data[:, :, :, 0]
     vdata = data[:, :, :, 1]
-    rang = np.divide(z, np.sin(np.deg2rad(elev)))
+    rang = np.divide(zplane, np.sin(np.deg2rad(elev)))
 
     uinterp = sp.interpolate.RegularGridInterpolator((x, y, z), udata)
     vinterp = sp.interpolate.RegularGridInterpolator((x, y, z), vdata)
 
-    if np.isnan(lidar_loc):
+    if np.isnan(lidar_loc).any():
         zloc = 0
         xloc = max(x) / 2
         yloc = max(y) / 2
         lidar_loc = np.array([xloc, yloc, zloc])
 
-    offsets = np.zeros((len(rang), len(az), 3))
-    for i in range(len(rang)):
-        offsets[i, :, :] = rad2CartOffset(az, rang[i], elev)
+    offsets = rad2CartOffset(az, rang, elev)
 
     locations = lidar_loc + offsets
     u_interp_val = uinterp(locations)
