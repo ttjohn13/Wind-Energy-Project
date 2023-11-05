@@ -41,3 +41,13 @@ def slice_points(data, x, y, z, az, elev, zplane, lidar_loc=np.NAN):
     y_return = locations[:, 1]
     z_return = locations[:, 2]
     return u_interp_val, v_interp_val, x_return, y_return, z_return
+
+
+def vectorProjection(u_actual, v_actual, meas_location, lidar_location):
+    laser_vector = meas_location - lidar_location.T
+    laser_meas = np.zeros_like(u_actual)
+    for i in range(len(u_actual)):
+        wind_vector = np.array([[u_actual[i], v_actual[i], 0]])
+        laser_meas[i] = np.dot(laser_vector[i, :].reshape((1, -1)), wind_vector.reshape((-1, 1))) / np.linalg.norm(laser_vector[i, :].reshape((-1, 1)))
+
+    return laser_vector, laser_meas
