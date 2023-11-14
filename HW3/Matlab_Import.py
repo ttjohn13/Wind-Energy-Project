@@ -4,7 +4,9 @@ import datetime
 
 
 class LidarData:
+    # create class to store matlab data
     def __init__(self, ranges, az, el, rv, date):
+        # initialize the class so each creation of class is new. Input is the part of creating the class
         self.range = ranges
         self.azimuth = az
         self.elevation = el
@@ -12,6 +14,7 @@ class LidarData:
         self.date = date
 
 
+# convert date string text to datetime format
 def convert_to_datetime(date_string):  # Function to convert the string of date times to a date time format
     return datetime.datetime.strptime(date_string, "%Y%m%d_%H%M%S")
 
