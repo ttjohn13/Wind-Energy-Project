@@ -51,12 +51,19 @@ def individualCreation(iclS, num_ones, y_size, x_size):
     return iclS(zeros_array)
 
 
+def mutate_func(individual, indpb):
+    for i in range(len(individual)):
+        if random.random() < indpb:
+            individual[i] = not individual[i]
+            del individual.fitness.values
+
+
 toolbox = base.Toolbox()
 toolbox.register("individual", individualCreation, creator.Individual, num_ones=target_number_of_turbines,
                  y_size=y_points, x_size=x_points)
 toolbox.register("evaluate", evalOneMax)
 toolbox.register("mate", cxTwoPointCopy)
-toolbox.register("mutate", tools.mutFlipBit, indpb=0.01)
+toolbox.register("mutate", mutate_func, indpb=0.01)
 toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
@@ -88,7 +95,6 @@ def main():
         for mutant in offspring:
             if random.random() < mutate_prob:
                 toolbox.mutate(mutant)
-                del mutant.fitness.values
 
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         fitnesses = map(toolbox.evaluate, invalid_ind)
