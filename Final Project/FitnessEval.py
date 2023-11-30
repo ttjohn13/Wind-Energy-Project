@@ -1,5 +1,5 @@
 import numpy as np
-from dataclasses import dataclass
+import scipy as sp
 
 
 def individualCreation(num_ones, y_size, x_size):
@@ -100,6 +100,28 @@ def turb_wind_speed(uinf, effect_matrix, turb_ordered_coord, turb_order, diam, C
     wind_speed_at_turb = np.stack(wind_speed_at_turb)
     return wind_speed_at_turb.squeeze()
 
+
+def power_and_correctness(wind_speed_at_turbine, power_curve, target_turb):
+    cut_in = np.min(power_curve[:, 0])
+    cut_out = np.max(power_curve[:, 0])
+    power_of_each_turb = []
+    interpolation_object = sp.interpolate.interp1d(power_curve[:, 0], power_curve[:, 1])
+    for wind_speed in wind_speed_at_turbine:
+        if (wind_speed >= cut_in) and (wind_speed <= cut_out):
+            pi = interpolation_object(wind_speed)
+        else:
+            pi = 0
+
+        power_of_each_turb.append(pi)
+    power_farm = sum(power_of_each_turb)
+    number_of_turb = len(wind_speed_at_turbine)
+    if number_of_turb != target_turb:
+        max_power = np.max(power_curve[:, 1])
+        error_from_target = np.abs(number_of_turb - target_turb)
+        power_farm = power_farm - error_from_target * max_power
+    return power_farm
+
+
 individual_1 = individualCreation(8, 5, 5)
 
 grid_1, x_grid_1, y_grid_1 = gridcreate(individual_1, 5, 5, 52)
@@ -108,3 +130,19 @@ ordered_turb_coord, order_num = turbineorder(turbine_locations)
 alpha_1 = 0.5 / np.log(55/0.04)
 M_effect = wakeeffectsmatrix(ordered_turb_coord, 52, alpha_1)
 turbine_wind_speeds = turb_wind_speed(15, M_effect, ordered_turb_coord, order_num, 52, 0.5, alpha_1)
+
+power_curve = np.array([[3, 1.7], [3.5, 15.3], [4, 30.8], [4.5, 53.7], [5, 77.4], [5.5, 106.2], [6, 139.7],
+                          [6.5, 171.4], [7, 211.6], [7.5, 248.6], [8, 294.1], [8.5, 378.8], [9, 438.9], [9.5, 496.4],
+                          [10, 578.4], [10.5, 629.8], [11, 668], [11.5, 742.4], [12, 783.6], [12.5, 801.3], [13, 819.4],
+                          [13.5, 831.7], [14, 841.8], [14.5, 849.6], [15, 850.4], [15.5, 851.5], [16, 851.9], [25, 851.9]])
+fitness = power_and_correctness(turbine_wind_speeds, power_curve, 7)
+
+
+def farm_pow_calc(individual, number_of_turbines, x_size, y_size, diameter, alpha, ct, turb_power_curve, u_infinity):
+    grid, x_grid, y_grid = gridcreate(individual, x_size, y_size, diameter)
+    turbine_locations_coord = turbinelocate(grid, x_grid, y_grid)
+    order_turb_coord, turb_order_num = turbineorder(turbine_locations_coord)
+    effect_matrix = wakeeffectsmatrix(order_turb_coord, diameter, alpha)
+    wind_speed_turbines = turb_wind_speed(u_infinity, effect_matrix, order_turb_coord, turb_order_num, diameter, ct, alpha)
+    fitness_of_individual = power_and_correctness(wind_speed_turbines, turb_power_curve, number_of_turbines)
+    return (fitness_of_individual,)
