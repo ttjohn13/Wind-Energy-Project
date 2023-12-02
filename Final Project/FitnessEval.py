@@ -86,7 +86,7 @@ def turb_wind_speed(uinf, effect_matrix, turb_ordered_coord, turb_order, diam, C
                 v1_part = uinf * (1 - (1 - np.sqrt((1-Ct)))/(1+2*alpha * s)**2)
                 vi.append(v1_part)
             elif s < 3:
-                v1_part = uinf * np.sqrt(1 - Ct)
+                v1_part = 0
                 vi.append(v1_part)
         if not vi:
             ui = uinf
