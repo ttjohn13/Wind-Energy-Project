@@ -115,7 +115,7 @@ def power_and_correctness(wind_speed_at_turbine, power_curve, target_turb):
         power_of_each_turb.append(pi)
     power_farm = sum(power_of_each_turb)
     number_of_turb = len(wind_speed_at_turbine)
-    if number_of_turb != target_turb:
+    if number_of_turb > target_turb:
         max_power = np.max(power_curve[:, 1])
         error_from_target = np.abs(number_of_turb - target_turb)
         power_farm = power_farm - error_from_target * max_power

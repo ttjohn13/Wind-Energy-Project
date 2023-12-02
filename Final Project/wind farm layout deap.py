@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 gene_space = [0, 1]  # possible values for each gene space
 
-target_number_of_turbines = 15
+target_number_of_turbines = 20
 turb_diameter = 52  # diameter of Vestas V52 rotor (m)
 wind_speed = 15  # oncoming constant wind speed
 # Create a grid of diameter spaced points that a turbine could be
