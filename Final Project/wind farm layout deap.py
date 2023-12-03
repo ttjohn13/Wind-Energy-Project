@@ -191,17 +191,16 @@ ani = FuncAnimation(fig2, update, frames=num_frames, repeat=False)
 matplotlib.rcParams['animation.ffmpeg_path'] = "C:\\Users\\trevo\\Downloads\\ffmpeg-6.1-essentials_build\\ffmpeg-6.1-essentials_build\\bin\\ffmpeg.exe"
 writer = animation.FFMpegWriter(fps=4)
 ani.save('GA Wind farm layout progression.mp4', writer=writer)
-plt.show()
 
 #%% post processing
-max_fitness_index = fitness_of_pop.index(max(fitness_of_pop))
-best_fit_pop = population[max_fitness_index]
+best_fit_pop = tracking_indiv[-1]
+fitness = tracking_fit[-1]
 
 grid_turb, x_grid, y_grid = gridcreate(best_fit_pop, x_points, y_points, turb_diameter)
 turbine_coord = turbinelocate(grid_turb, x_grid, y_grid)
 
 fig, ax = plt.subplots(figsize=(8, 8))
-ax.set_title('Turbine locations')
+ax.set_title(f'Turbine locations: {fitness: .0f} kW')
 ax.set_ylabel('y (m)')
 ax.set_xlabel('x (m)')
 ax.set_xlim([-turb_diameter, turb_diameter*(1 + x_points)])
