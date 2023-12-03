@@ -1,5 +1,6 @@
 import random
 
+import numpy
 import numpy as np
 from deap import base, creator, tools
 from FitnessEval import farm_pow_calc, gridcreate, turbinelocate
@@ -79,6 +80,12 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 def main():
     pop = toolbox.population(n=100)
+    hof = tools.HallOfFame(3, similar=np.array_equal)
+    stats = tools.Statistics(key=lambda indi: indi.fitness.values)
+    stats.register("avg", np.mean)
+    stats.register("min", np.min)
+    stats.register("max", np.max)
+    logbook = tools.Logbook()
     fitnesses = list(map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses):
         ind.fitness.values = fit
@@ -89,7 +96,7 @@ def main():
     fits = [ind.fitness.values[0] for ind in pop]
     generations = 0
 
-    while generations<1000:
+    while generations<300:
         generations += 1
         print("-- Generation %i --" % generations)
         offspring = toolbox.select(pop, len(pop))
@@ -111,6 +118,9 @@ def main():
             ind.fitness.values = fit
 
         pop[:] = offspring
+        hof.update(pop)
+        record = stats.compile(pop)
+        logbook.record(gen=generations, **record)
 
         fits = [ind.fitness.values[0] for ind in pop]
 
@@ -120,9 +130,9 @@ def main():
         print("  Max %s" % max(fits))
         print("  Avg %s" % mean)
 
-    return pop, fits
+    return pop, fits, logbook
 
-population, fitness_of_pop = main()
+population, fitness_of_pop, tracking = main()
 
 #%% post processing
 max_fitness_index = fitness_of_pop.index(max(fitness_of_pop))
@@ -140,5 +150,17 @@ ax.set_ylim([-turb_diameter, turb_diameter*(1 + y_points)])
 ax.scatter(turbine_coord[:, 0], turbine_coord[:, 1], s=50, c='red', marker='o')
 plt.show()
 
+#%% Logged stats and plots
+
+gen, avg, maximum = tracking.select('gen', 'avg', 'max')
+
+fig1, ax1 = plt.subplots()
+avg_line = ax1.plot(gen, avg, label='Average Population Fittness')
+max_line = ax1.plot(gen, maximum, label='Best Fit Individual')
+ax1.set_xlabel('Generation')
+ax1.set_ylabel('Farm production (kW)')
+ax1.legend()
+ax1.set_title('GA performance')
+plt.show()
 
 
