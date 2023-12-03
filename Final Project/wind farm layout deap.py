@@ -5,6 +5,10 @@ import numpy as np
 from deap import base, creator, tools
 from FitnessEval import farm_pow_calc, gridcreate, turbinelocate
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from matplotlib import animation
+import matplotlib
+
 
 gene_space = [0, 1]  # possible values for each gene space
 
@@ -79,8 +83,8 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
 def main():
-    pop = toolbox.population(n=100)
-    hof = tools.HallOfFame(3, similar=np.array_equal)
+    pop = toolbox.population(n=250)
+    hof = tools.HallOfFame(1, similar=np.array_equal)
     stats = tools.Statistics(key=lambda indi: indi.fitness.values)
     stats.register("avg", np.mean)
     stats.register("min", np.min)
@@ -95,8 +99,10 @@ def main():
 
     fits = [ind.fitness.values[0] for ind in pop]
     generations = 0
+    hof_track_indiv = []
+    hof_track_fit = []
 
-    while generations<300:
+    while generations<500:
         generations += 1
         print("-- Generation %i --" % generations)
         offspring = toolbox.select(pop, len(pop))
@@ -119,6 +125,11 @@ def main():
 
         pop[:] = offspring
         hof.update(pop)
+        hof_indiv = hof.items.copy()
+        hof_fit = hof.keys.copy()
+        hof_track_indiv.append(hof_indiv)
+        hof_track_fit.append(hof_fit[0].values[0])
+
         record = stats.compile(pop)
         logbook.record(gen=generations, **record)
 
@@ -130,9 +141,33 @@ def main():
         print("  Max %s" % max(fits))
         print("  Avg %s" % mean)
 
-    return pop, fits, logbook
+    return pop, fits, logbook, hof_track_indiv, hof_track_fit
 
-population, fitness_of_pop, tracking = main()
+
+population, fitness_of_pop, tracking, tracking_indiv, tracking_fit = main()
+
+#%%
+def update(frame):
+    best_individual = tracking_indiv[frame*5]
+    production = tracking_fit[frame*5]
+    grid, xgrid, ygrid = gridcreate(best_individual, x_points, y_points, turb_diameter)
+    coord = turbinelocate(grid, xgrid, ygrid)
+    ax2.clear()
+    ax2.scatter(coord[:, 0], coord[:, 1], s=50, c='red', marker='o')
+    ax2.set_ylabel('y (m)')
+    ax2.set_xlabel('x (m)')
+    ax2.set_aspect('equal')
+    ax2.set_title(f'Best Individual: {production:.0f} kW')
+    ax2.set_xlim([-turb_diameter, turb_diameter * (1 + x_points)])
+    ax2.set_ylim([-turb_diameter, turb_diameter * (1 + y_points)])
+
+fig2, ax2 = plt.subplots()
+num_frames = 500//5
+ani = FuncAnimation(fig2, update, frames=num_frames, repeat=False)
+matplotlib.rcParams['animation.ffmpeg_path'] = "C:\\Users\\trevo\\Downloads\\ffmpeg-6.1-essentials_build\\ffmpeg-6.1-essentials_build\\bin\\ffmpeg.exe"
+writer = animation.FFMpegWriter(fps=4)
+ani.save('GA Wind farm layout progression.mp4', writer=writer)
+plt.show()
 
 #%% post processing
 max_fitness_index = fitness_of_pop.index(max(fitness_of_pop))
@@ -148,6 +183,7 @@ ax.set_xlabel('x (m)')
 ax.set_xlim([-turb_diameter, turb_diameter*(1 + x_points)])
 ax.set_ylim([-turb_diameter, turb_diameter*(1 + y_points)])
 ax.scatter(turbine_coord[:, 0], turbine_coord[:, 1], s=50, c='red', marker='o')
+ax.set_aspect('equal')
 plt.show()
 
 #%% Logged stats and plots
