@@ -33,7 +33,7 @@ creator.create("FitnessMax", base.Fitness, weights=(1.0,))  # a max will be foun
 creator.create("Individual", np.ndarray, fitness=creator.FitnessMax)  # individuals will be a numpy array
 
 
-def cxTwoPointCopy(ind1, ind2):
+def cxTwoPointCopy(ind1, ind2, number_of_turbines):
     """Deals with issue of numpy array viewing inside deap module"""
     size = len(ind1)
     cxpoint1 = random.randint(1, size)
@@ -45,6 +45,30 @@ def cxTwoPointCopy(ind1, ind2):
 
     ind1[cxpoint1:cxpoint2], ind2[cxpoint1:cxpoint2] \
         = ind2[cxpoint1:cxpoint2].copy(), ind1[cxpoint1:cxpoint2].copy()
+    
+    sum1 = sum(ind1)
+    sum2 = sum(ind2)
+    if sum1 > number_of_turbines:
+        indices = np.where(ind1 == 1)[0]
+        to_turn = sum1 - number_of_turbines
+        random_flip_index = np.random.choice(indices, int(to_turn), replace=False)
+        ind1[random_flip_index] = 0
+    elif sum1 < number_of_turbines:
+        indices = np.where(ind1 == 0)[0]
+        to_turn = number_of_turbines - sum1
+        random_flip_index = np.random.choice(indices, int(to_turn), replace=False)
+        ind1[random_flip_index] = 1
+    
+    if sum2 > number_of_turbines:
+        indices = np.where(ind2 == 1)[0]
+        to_turn = sum2 - number_of_turbines
+        random_flip_index = np.random.choice(indices, int(to_turn), replace=False)
+        ind2[random_flip_index] = 0
+    elif sum2 < number_of_turbines:
+        indices = np.where(ind2 == 0)[0]
+        to_turn = number_of_turbines - sum2
+        random_flip_index = np.random.choice(indices, int(to_turn), replace=False)
+        ind2[random_flip_index] = 1
 
     return ind1, ind2
 
@@ -74,16 +98,16 @@ def mutate_func(individual, indpb):
 toolbox = base.Toolbox()
 toolbox.register("individual", individualCreation, creator.Individual, num_ones=target_number_of_turbines,
                  y_size=y_points, x_size=x_points)
-toolbox.register("evaluate", evalOneMax,number_of_turbines=target_number_of_turbines, x_size=x_points, y_size=y_points,
+toolbox.register("evaluate", evalOneMax, number_of_turbines=target_number_of_turbines, x_size=x_points, y_size=y_points,
                  diameter=turb_diameter, alpha=alpha_1, ct=Ct, turb_power_curve=power_curve, u_infinity=wind_speed)
-toolbox.register("mate", cxTwoPointCopy)
+toolbox.register("mate", cxTwoPointCopy, number_of_turbines=target_number_of_turbines)
 toolbox.register("mutate", mutate_func, indpb=0.01)
 toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
 def main():
-    pop = toolbox.population(n=250)
+    pop = toolbox.population(n=500)
     hof = tools.HallOfFame(1, similar=np.array_equal)
     stats = tools.Statistics(key=lambda indi: indi.fitness.values)
     stats.register("avg", np.mean)
@@ -102,7 +126,7 @@ def main():
     hof_track_indiv = []
     hof_track_fit = []
 
-    while generations<500:
+    while generations<200:
         generations += 1
         print("-- Generation %i --" % generations)
         offspring = toolbox.select(pop, len(pop))
@@ -148,8 +172,8 @@ population, fitness_of_pop, tracking, tracking_indiv, tracking_fit = main()
 
 #%%
 def update(frame):
-    best_individual = tracking_indiv[frame*5]
-    production = tracking_fit[frame*5]
+    best_individual = tracking_indiv[frame*2]
+    production = tracking_fit[frame*2]
     grid, xgrid, ygrid = gridcreate(best_individual, x_points, y_points, turb_diameter)
     coord = turbinelocate(grid, xgrid, ygrid)
     ax2.clear()
@@ -162,7 +186,7 @@ def update(frame):
     ax2.set_ylim([-turb_diameter, turb_diameter * (1 + y_points)])
 
 fig2, ax2 = plt.subplots()
-num_frames = 500//5
+num_frames = 200//2
 ani = FuncAnimation(fig2, update, frames=num_frames, repeat=False)
 matplotlib.rcParams['animation.ffmpeg_path'] = "C:\\Users\\trevo\\Downloads\\ffmpeg-6.1-essentials_build\\ffmpeg-6.1-essentials_build\\bin\\ffmpeg.exe"
 writer = animation.FFMpegWriter(fps=4)
