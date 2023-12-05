@@ -190,7 +190,7 @@ num_frames = 200//2
 ani = FuncAnimation(fig2, update, frames=num_frames, repeat=False)
 matplotlib.rcParams['animation.ffmpeg_path'] = "C:\\Users\\trevo\\Downloads\\ffmpeg-6.1-essentials_build\\ffmpeg-6.1-essentials_build\\bin\\ffmpeg.exe"
 writer = animation.FFMpegWriter(fps=4)
-ani.save('GA Wind farm layout progression.mp4', writer=writer)
+# ani.save('GA Wind farm layout progression.mp4', writer=writer)
 
 #%% post processing
 best_fit_pop = tracking_indiv[-1]
@@ -222,4 +222,10 @@ ax1.legend()
 ax1.set_title('GA performance')
 plt.show()
 
-
+#%% Power curve
+fig3, ax3 = plt.subplots()
+ax3.set_title('V52 Power Curve')
+ax3.set_xlabel('Incoming Wind Speed (m/s)')
+ax3.set_ylabel('Power Output (kW)')
+ax3.plot(power_curve[:, 0], power_curve[:, 1])
+plt.show()
